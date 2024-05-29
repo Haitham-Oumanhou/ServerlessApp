@@ -1,24 +1,59 @@
 import React, { useState } from "react";
 import { Button } from "@nextui-org/button";
+import axios from "axios";
 
-const Todo = ({ Id, Task, Status }) => {
+const Todo = ({ id, Task, Status }) => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(Task);
   const [editedStatus, setEditedStatus] = useState(Status);
 
-  const completeTask = () => {
-    
-    setIsCompleted(true);
-  };
+  const completeTask = async () => {
+    try {
+      await axios.patch(
+        `https://mywqqc0v8f.execute-api.us-east-1.amazonaws.com/v1/todos/${id}`,
+        { Status: "Completed" }
+      );
+      window.location.reload();
 
+      setIsCompleted(true);
+    } catch (error) {
+      console.error("Error completing task:", error);
+    }
+  };
   const handleEdit = () => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
-    // Save the edited task and status
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (editedTask.trim() === "") return;
+
+    const updatedTodo = {
+      Task: editedTask,
+      Status: editedStatus,
+    };
+    try {
+      await axios.put(
+        `https://mywqqc0v8f.execute-api.us-east-1.amazonaws.com/v1/todos/${id}`,
+        updatedTodo
+      );
+      window.location.reload();
+    } catch (error) {
+      console.log("Error updating:", error);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const deleteTodo = async (id) => {
+    try {
+      await axios.delete(
+        `https://mywqqc0v8f.execute-api.us-east-1.amazonaws.com/v1/todos/${id}`
+      );
+      window.location.reload();
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+    }
   };
 
   return (
@@ -33,8 +68,10 @@ const Todo = ({ Id, Task, Status }) => {
       ) : (
         <h3
           className={`text-xl font-bold ${
-            isCompleted ? "text-green-500 line-through" : ""
-          } ${isCompleted ? "cursor-default" : ""}`}
+            Status === "Completed"
+              ? "text-green-500 line-through cursor-default"
+              : ""
+          }`}
         >
           {Task}
         </h3>
@@ -49,7 +86,10 @@ const Todo = ({ Id, Task, Status }) => {
           <option value="Completed">Completed</option>
         </select>
       ) : (
-        <p className="font-medium" style={{ color: "#28A745" }}>
+        <p
+          className="font-medium"
+          style={{ color: Status === "Completed" ? "#28A745" : "#3777FF" }}
+        >
           {Status}
         </p>
       )}
@@ -81,7 +121,14 @@ const Todo = ({ Id, Task, Status }) => {
             >
               Edit
             </Button>
-            <Button className="font-semibold" color="danger" radius="sm">
+            <Button
+              className="font-semibold"
+              color="danger"
+              radius="sm"
+              onClick={() => {
+                deleteTodo(id);
+              }}
+            >
               Delete
             </Button>
           </>
